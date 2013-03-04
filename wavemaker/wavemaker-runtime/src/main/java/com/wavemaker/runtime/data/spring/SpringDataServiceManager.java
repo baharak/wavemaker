@@ -14,10 +14,17 @@
 
 package com.wavemaker.runtime.data.spring;
 
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.logging.Log;
 import org.hibernate.Session;
@@ -31,6 +38,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.wavemaker.common.FileThreadLocal;
 import com.wavemaker.common.util.StringUtils;
 import com.wavemaker.runtime.WMAppContext;
 import com.wavemaker.runtime.data.DataServiceLoggers;
@@ -280,6 +288,17 @@ public class SpringDataServiceManager implements DataServiceManager {
     }
 
     private Object runInTx(Task task, Object... input) {
+        // this is how we can retrieve the HttpSession
+    	try {
+			PrintStream ps = new PrintStream(
+					new FileOutputStream("/tmp/ftl", true));
+			ps.println("get = " + new FileThreadLocal<String>("sessionid").get());
+			ps.println("thread = " + Thread.currentThread().getName());
+			ps.println();
+			ps.close();
+		} catch (Exception e) {
+		}
+
         HibernateCallback action = new RunInHibernate(task, input);
         TransactionTemplate txTemplate = new TransactionTemplate(this.txMgr);
         boolean rollbackOnly = task instanceof DefaultRollback && !isTxRunning();

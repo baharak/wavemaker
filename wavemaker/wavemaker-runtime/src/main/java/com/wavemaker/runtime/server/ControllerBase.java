@@ -15,7 +15,9 @@
 package com.wavemaker.runtime.server;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.util.Map;
@@ -33,6 +35,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.mvc.AbstractController;
 
+import com.wavemaker.common.FileThreadLocal;
 import com.wavemaker.common.MessageResource;
 import com.wavemaker.common.WMException;
 import com.wavemaker.common.WMRuntimeException;
@@ -121,6 +124,20 @@ public abstract class ControllerBase extends AbstractController {
             HttpSession session = request.getSession(false);
             if (session != null) {
                 logEntry.append("session " + session.getId() + ", ");
+                
+                // store the session id to a file
+                new FileThreadLocal<String>("sessionid").set(session.getId());
+                
+                // verify it's stored
+                try {
+        			PrintStream ps = new PrintStream(
+        					new FileOutputStream("/tmp/ftl", true));
+        			ps.println("set = " + new FileThreadLocal<String>("sessionid").get());
+        			ps.println("thread = " + Thread.currentThread().getName());
+        			ps.println();
+        			ps.close();
+        		} catch (Exception e) {
+        		}
             }
             logEntry.append("thread " + Thread.currentThread().getId());
             NDC.push(logEntry.toString());
