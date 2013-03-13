@@ -16,10 +16,12 @@ package com.wavemaker.runtime.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.util.Map;
 
+import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -34,6 +36,9 @@ import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.mvc.AbstractController;
 
 import com.wavemaker.common.MessageResource;
+import com.wavemaker.common.TestPrincipal;
+import com.wavemaker.common.TestPrivCredential;
+import com.wavemaker.common.TestPubCredential;
 import com.wavemaker.common.WMException;
 import com.wavemaker.common.WMRuntimeException;
 import com.wavemaker.json.JSONArray;
@@ -105,20 +110,38 @@ public abstract class ControllerBase extends AbstractController {
     }
 
     @Override
-    public ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) {
+    public ModelAndView handleRequestInternal(final HttpServletRequest request, final HttpServletResponse response) {
 
         if (request == null) {
             throw new WMRuntimeException(MessageResource.SERVER_NOREQUEST);
         } else if (response == null) {
             throw new WMRuntimeException(MessageResource.SERVER_NORESPONSE);
         }
+        
+        TestPrincipal tp = new TestPrincipal( "chap");
+		TestPrivCredential tprv = new TestPrivCredential( new char[] {'a','b','c'});
+		TestPubCredential tpub =
+				new TestPubCredential( new Double( Math.PI)); // and why not?
 
+		Subject s = new Subject();
+		s.getPrincipals().add( tp);
+		s.getPublicCredentials().add( tpub);
+		s.getPrivateCredentials().add( tprv);
+		s.setReadOnly();
+        
+		class Ret {
         ModelAndView ret;
+        };
+        final Ret ret = new Ret();
+        s.doAs(s, new PrivilegedAction<Boolean>() {
+			public Boolean run() {
+				
         try {
-            this.runtimeAccess.setStartTime(System.currentTimeMillis());
+            ControllerBase.this.runtimeAccess.setStartTime(System.currentTimeMillis());
             // add logging
-            StringBuilder logEntry = new StringBuilder();
-            HttpSession session = request.getSession(false);
+            final StringBuilder logEntry = new StringBuilder();
+            final HttpSession session = request.getSession(false);
+            
             if (session != null) {
                 logEntry.append("session " + session.getId() + ", ");
             }
@@ -132,27 +155,32 @@ public abstract class ControllerBase extends AbstractController {
             initializeRuntime(request, response);
 
             // execute the request
-            ret = executeRequest(request, response);
+            ret.ret = executeRequest(request, response);
 
             getServletEventNotifier().executeEndRequest();
+            
+            
         } catch (Throwable t) {
-            this.logger.error(t.getMessage(), t);
+            ControllerBase.this.logger.error(t.getMessage(), t);
             String message = t.getMessage();
             if (!StringUtils.hasLength(message)) {
                 message = t.toString();
             }
-            if (this.serviceResponse != null && !this.serviceResponse.isPollingRequest() && this.serviceResponse.getConnectionTimeout() > 0
-                && System.currentTimeMillis() - this.runtimeAccess.getStartTime() > (this.serviceResponse.getConnectionTimeout() - 3) * 1000) {
-                this.serviceResponse.addError(t);
+            if (ControllerBase.this.serviceResponse != null && !ControllerBase.this.serviceResponse.isPollingRequest() && ControllerBase.this.serviceResponse.getConnectionTimeout() > 0
+                && System.currentTimeMillis() - ControllerBase.this.runtimeAccess.getStartTime() > (ControllerBase.this.serviceResponse.getConnectionTimeout() - 3) * 1000) {
+                ControllerBase.this.serviceResponse.addError(t);
             }
-            return handleError(message, t);
+            ret.ret = ControllerBase.this.handleError(message, t);
         } finally {
             RuntimeAccess.setRuntimeBean(null);
             NDC.pop();
             NDC.remove();
         }
-
-        return ret;
+        	
+        	return true;
+			}
+        });
+        return ret.ret;
     }
 
     /**

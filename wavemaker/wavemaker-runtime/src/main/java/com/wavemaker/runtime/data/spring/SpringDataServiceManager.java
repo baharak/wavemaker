@@ -14,10 +14,18 @@
 
 package com.wavemaker.runtime.data.spring;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Proxy;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.security.auth.DestroyFailedException;
+import javax.security.auth.Destroyable;
+import javax.security.auth.Subject;
 
 import org.apache.commons.logging.Log;
 import org.hibernate.Session;
@@ -31,6 +39,9 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.wavemaker.common.TestPrincipal;
+import com.wavemaker.common.TestPrivCredential;
+import com.wavemaker.common.TestPubCredential;
 import com.wavemaker.common.util.StringUtils;
 import com.wavemaker.runtime.WMAppContext;
 import com.wavemaker.runtime.data.DataServiceLoggers;
@@ -280,6 +291,29 @@ public class SpringDataServiceManager implements DataServiceManager {
     }
 
     private Object runInTx(Task task, Object... input) {
+        // this is how we can retrieve the HttpSession
+    	try {
+    		// Recover the Subject from this thread's AccessControlContext
+    		AccessControlContext acc = AccessController.getContext();
+    		Subject s = Subject.getSubject( acc);
+
+    		PrintStream ps = new PrintStream(
+					new FileOutputStream("/tmp/doas", true));
+    		ps.println( s.getPrincipals( TestPrincipal.class));
+    		ps.println( s.getPublicCredentials( TestPubCredential.class));
+    		ps.println( s.getPrivateCredentials( TestPrivCredential.class));
+    		ps.println();
+    		ps.close();
+
+    		// If we won't need the private credentials any more...
+    		for ( Destroyable d : s.getPrivateCredentials( Destroyable.class) )
+    			try {
+    				d.destroy();
+    			}
+    		catch ( DestroyFailedException dfe ) { }
+		} catch (Exception e) {
+		}
+
         HibernateCallback action = new RunInHibernate(task, input);
         TransactionTemplate txTemplate = new TransactionTemplate(this.txMgr);
         boolean rollbackOnly = task instanceof DefaultRollback && !isTxRunning();
