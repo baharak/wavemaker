@@ -22,10 +22,12 @@ import java.security.AccessController;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.Destroyable;
 import javax.security.auth.Subject;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.logging.Log;
 import org.hibernate.Session;
@@ -292,25 +294,38 @@ public class SpringDataServiceManager implements DataServiceManager {
 
     private Object runInTx(Task task, Object... input) {
         // this is how we can retrieve the HttpSession
-    	try {
-    		// Recover the Subject from this thread's AccessControlContext
-    		AccessControlContext acc = AccessController.getContext();
-    		Subject s = Subject.getSubject( acc);
+        try {
+            // Recover the Subject from this thread's AccessControlContext
+            AccessControlContext acc = AccessController.getContext();
+            Subject s = Subject.getSubject(acc);
 
-    		PrintStream ps = new PrintStream(
-					new FileOutputStream("/tmp/doas", true));
-    		ps.println( s.getPrincipals( TestPrincipal.class));
-    		ps.println( s.getPublicCredentials( TestPubCredential.class));
-    		ps.println( s.getPrivateCredentials( TestPrivCredential.class));
-    		ps.println();
-    		ps.close();
+            PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas",
+                    true));
+            ps.println(s.getPrincipals(TestPrincipal.class));
+            ps.println(s.getPublicCredentials(TestPubCredential.class));
+            ps.println(s.getPrivateCredentials(TestPrivCredential.class));
+            Set<Object> pubCreds = s.getPublicCredentials();
+            if (!pubCreds.isEmpty()) {
+                try {
+                    HttpSession session = (HttpSession) pubCreds
+                            .iterator().next();
+                    if (session != null)
+                        ps.println("sessionId = " + session.getId());
+                    else
+                        ps.println("(session is null)");
+                } catch (Exception e) {
+                    ps.println("exc = " + e);
+                }
+            } else ps.println("Empty credentials");
+            ps.println();
+            ps.close();
 
-    		// If we won't need the private credentials any more...
-    		for ( Destroyable d : s.getPrivateCredentials( Destroyable.class) )
-    			try {
-    				d.destroy();
-    			}
-    		catch ( DestroyFailedException dfe ) { }
+            // If we won't need the private credentials any more...
+            for (Destroyable d : s.getPrivateCredentials(Destroyable.class))
+                try {
+                    d.destroy();
+                } catch (DestroyFailedException dfe) {
+                }
 		} catch (Exception e) {
 		}
 

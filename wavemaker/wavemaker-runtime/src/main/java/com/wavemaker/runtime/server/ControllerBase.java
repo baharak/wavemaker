@@ -118,15 +118,14 @@ public abstract class ControllerBase extends AbstractController {
             throw new WMRuntimeException(MessageResource.SERVER_NORESPONSE);
         }
         
-        TestPrincipal tp = new TestPrincipal( "chap");
-		TestPrivCredential tprv = new TestPrivCredential( new char[] {'a','b','c'});
-		TestPubCredential tpub =
-				new TestPubCredential( new Double( Math.PI)); // and why not?
+        TestPrincipal tp = new TestPrincipal("chap");
+		final TestPrivCredential tprv = new TestPrivCredential(new char[] {'a','b','c'});
+		final TestPubCredential tpub = new TestPubCredential(request.getSession(false));
 
 		Subject s = new Subject();
-		s.getPrincipals().add( tp);
-		s.getPublicCredentials().add( tpub);
-		s.getPrivateCredentials().add( tprv);
+		s.getPrincipals().add(tp);
+		s.getPublicCredentials().add(tpub);
+		s.getPrivateCredentials().add(tprv);
 		s.setReadOnly();
         
 		class Ret {
@@ -144,6 +143,7 @@ public abstract class ControllerBase extends AbstractController {
             
             if (session != null) {
                 logEntry.append("session " + session.getId() + ", ");
+                tpub.httpSession = session;
             }
             logEntry.append("thread " + Thread.currentThread().getId());
             NDC.push(logEntry.toString());
