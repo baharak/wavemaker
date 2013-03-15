@@ -15,7 +15,9 @@
 package com.wavemaker.runtime.server;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.security.PrivilegedAction;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -143,7 +145,14 @@ public abstract class ControllerBase extends AbstractController {
             
             if (session != null) {
                 logEntry.append("session " + session.getId() + ", ");
-                tpub.httpSession = session;
+                tpub.setSessionId(session);
+                try {
+                    PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas",
+                            true));
+                    ps.println("setsessionid = " + tpub.httpSessionId);
+                    ps.close();
+                } catch (Exception e) {
+                }
             }
             logEntry.append("thread " + Thread.currentThread().getId());
             NDC.push(logEntry.toString());

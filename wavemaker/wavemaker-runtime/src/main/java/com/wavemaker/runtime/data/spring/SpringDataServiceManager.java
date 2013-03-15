@@ -303,6 +303,12 @@ public class SpringDataServiceManager implements DataServiceManager {
                     true));
             
             ps.println("contextClassLoader = " + Thread.currentThread().getContextClassLoader());
+            ps.println("SDSM classLoader = " + getClass().getClassLoader());
+            ps.println("principal classLoader = " + TestPrincipal.class.getClassLoader());
+            ps.println("pubCred classLoader = " + TestPubCredential.class.getClassLoader());
+            ps.println("privCred classLoader = " + TestPrivCredential.class.getClassLoader());
+            ps.println("sessionId classLoader = " +
+                    String.class.getClassLoader());
             try {          
                 ps.println("Principles = " + s.getPrincipals(TestPrincipal.class));
                 ps.println("PublicCredentials = " + s.getPublicCredentials(TestPubCredential.class));
@@ -314,20 +320,19 @@ public class SpringDataServiceManager implements DataServiceManager {
                     
                     for(Object o : pubCreds)
                     {
-                        ps.println("Credential #" + itsindex++);
+                        ps.println("Pub Credential #" + itsindex++);
                         ps.println("pubCred = " + o);
                         try {
                             TestPubCredential tpub = (TestPubCredential) o;
-                            HttpSession session = (HttpSession) tpub.httpSession;
+                            String sessionId = (String) tpub.httpSessionId;
                                     //.iterator().next();
-                            if (session != null)
-                                ps.println("sessionId = " + session.getId());
-                            else
-                                ps.println("(session is null)");
+                            if (sessionId != null) {
+                                ps.println("sessionId = " + sessionId);
+                            } else
+                                ps.println("(sessionId is null)");
                         } catch (Exception e) {
                             ps.println("exc = " + e);
                        }
-                    
                 }
                     
                 } else ps.println("Empty credentials");
