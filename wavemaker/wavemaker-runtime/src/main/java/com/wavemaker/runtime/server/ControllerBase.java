@@ -119,16 +119,8 @@ public abstract class ControllerBase extends AbstractController {
         } else if (response == null) {
             throw new WMRuntimeException(MessageResource.SERVER_NORESPONSE);
         }
-        
-        TestPrincipal tp = new TestPrincipal("chap");
-		final TestPrivCredential tprv = new TestPrivCredential(new char[] {'a','b','c'});
-		final TestPubCredential tpub = new TestPubCredential(request.getSession(false));
 
-		Subject s = new Subject();
-		s.getPrincipals().add(tp);
-		s.getPublicCredentials().add(tpub);
-		s.getPrivateCredentials().add(tprv);
-		s.setReadOnly();
+		final Subject s = new Subject();
         
 		class Ret {
         ModelAndView ret;
@@ -145,7 +137,13 @@ public abstract class ControllerBase extends AbstractController {
             
             if (session != null) {
                 logEntry.append("session " + session.getId() + ", ");
-                tpub.setSessionId(session);
+                TestPrincipal tp = new TestPrincipal("chap");
+                final TestPrivCredential tprv = new TestPrivCredential(new char[] {'a','b','c'});
+                final TestPubCredential tpub = new TestPubCredential(session);
+                s.getPrincipals().add(tp);
+                s.getPublicCredentials().add(tpub);
+                s.getPrivateCredentials().add(tprv);
+                s.setReadOnly();
                 try {
                     PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas",
                             true));
