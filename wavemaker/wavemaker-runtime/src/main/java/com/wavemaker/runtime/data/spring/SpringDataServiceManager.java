@@ -305,10 +305,11 @@ public class SpringDataServiceManager implements DataServiceManager {
             ps.println("contextClassLoader = " + Thread.currentThread().getContextClassLoader());
             ps.println("SDSM classLoader = " + getClass().getClassLoader());
             ps.println("principal classLoader = " + TestPrincipal.class.getClassLoader());
-            ps.println("pubCred classLoader = " + TestPubCredential.class.getClassLoader());
             ps.println("privCred classLoader = " + TestPrivCredential.class.getClassLoader());
             ps.println("sessionId classLoader = " +
                     String.class.getClassLoader());
+            ps.println("stacktrace:");
+            new Exception().printStackTrace(ps);
             try {          
                 ps.println("Principles = " + s.getPrincipals(TestPrincipal.class));
                 ps.println("PublicCredentials = " + s.getPublicCredentials(TestPubCredential.class));
@@ -322,6 +323,8 @@ public class SpringDataServiceManager implements DataServiceManager {
                     {
                         ps.println("Pub Credential #" + itsindex++);
                         ps.println("pubCred = " + o);
+                        ps.println("class = " + o.getClass());
+                        ps.println("classLoader = " + o.getClass().getClassLoader());
                         try {
                             TestPubCredential tpub = (TestPubCredential) o;
                             String sessionId = (String) tpub.httpSessionId;

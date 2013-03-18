@@ -120,7 +120,19 @@ public abstract class ControllerBase extends AbstractController {
             throw new WMRuntimeException(MessageResource.SERVER_NORESPONSE);
         }
 
+        
+        try {
+            PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas",
+                    true));
+            ps.println("ControllerBase session = " + request.getSession(false));
+            ps.close();
+        } catch (Exception e) {
+        }
+        
 		final Subject s = new Subject();
+		if (request.getSession(false) != null) {
+		    
+		}
         
 		class Ret {
         ModelAndView ret;
