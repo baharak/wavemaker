@@ -86,6 +86,9 @@ public abstract class ControllerBase extends AbstractController {
     private InternalRuntime internalRuntime;
 
     private RuntimeAccess runtimeAccess;
+    
+    private ThreadLocal<Subject> subjectThreadLocal =
+            new ThreadLocal<Subject>();
 
     /**
      * Create the default JSONState.
@@ -119,21 +122,34 @@ public abstract class ControllerBase extends AbstractController {
         } else if (response == null) {
             throw new WMRuntimeException(MessageResource.SERVER_NORESPONSE);
         }
-
+        
         
         try {
-            PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas",
+            PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas-" + Thread.currentThread().getId(),
                     true));
             ps.println("ControllerBase session = " + request.getSession(false));
+            ps.println("ControllerBase class = " + Thread.currentThread().getName());
+            ps.println("ControllerBase stack trace = ");
+            new Exception().printStackTrace(ps);
+            
             ps.close();
         } catch (Exception e) {
         }
         
-		final Subject s = new Subject();
-		if (request.getSession(false) != null) {
-		    
+		final HttpSession session = request.getSession(false);
+		if (session != null && subjectThreadLocal.get() == null) { //if session is not null and we have not set the cred
+		    Subject s = new Subject();
+		    TestPrincipal tp = new TestPrincipal("chap");
+            final TestPrivCredential tprv = new TestPrivCredential(new char[] {'a','b','c'});
+            final TestPubCredential tpub = new TestPubCredential(session);
+            s.getPrincipals().add(tp);
+            s.getPublicCredentials().add(tpub);
+            s.getPrivateCredentials().add(tprv);
+            s.setReadOnly();
+		    subjectThreadLocal.set(s);
 		}
-        
+		final Subject s = (subjectThreadLocal.get() != null ? subjectThreadLocal.get() : new Subject());
+		
 		class Ret {
         ModelAndView ret;
         };
@@ -145,21 +161,13 @@ public abstract class ControllerBase extends AbstractController {
             ControllerBase.this.runtimeAccess.setStartTime(System.currentTimeMillis());
             // add logging
             final StringBuilder logEntry = new StringBuilder();
-            final HttpSession session = request.getSession(false);
             
             if (session != null) {
                 logEntry.append("session " + session.getId() + ", ");
-                TestPrincipal tp = new TestPrincipal("chap");
-                final TestPrivCredential tprv = new TestPrivCredential(new char[] {'a','b','c'});
-                final TestPubCredential tpub = new TestPubCredential(session);
-                s.getPrincipals().add(tp);
-                s.getPublicCredentials().add(tpub);
-                s.getPrivateCredentials().add(tprv);
-                s.setReadOnly();
                 try {
                     PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas",
                             true));
-                    ps.println("setsessionid = " + tpub.httpSessionId);
+                    ps.println("setsessionid = " + session.getId());
                     ps.close();
                 } catch (Exception e) {
                 }

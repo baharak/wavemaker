@@ -299,7 +299,7 @@ public class SpringDataServiceManager implements DataServiceManager {
             AccessControlContext acc = AccessController.getContext();
             Subject s = Subject.getSubject(acc);
 
-            PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas",
+            PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas-" + Thread.currentThread().getId(),
                     true));
             
             ps.println("contextClassLoader = " + Thread.currentThread().getContextClassLoader());
@@ -308,7 +308,8 @@ public class SpringDataServiceManager implements DataServiceManager {
             ps.println("privCred classLoader = " + TestPrivCredential.class.getClassLoader());
             ps.println("sessionId classLoader = " +
                     String.class.getClassLoader());
-            ps.println("stacktrace:");
+            ps.println("SDSM thread = " + Thread.currentThread().getName());
+            ps.println("SDSM stack trace = ");
             new Exception().printStackTrace(ps);
             try {          
                 ps.println("Principles = " + s.getPrincipals(TestPrincipal.class));
