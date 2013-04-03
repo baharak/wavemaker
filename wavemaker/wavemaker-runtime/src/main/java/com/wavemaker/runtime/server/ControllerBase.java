@@ -128,6 +128,7 @@ public abstract class ControllerBase extends AbstractController {
             PrintStream ps = new PrintStream(new FileOutputStream("/tmp/doas-" + Thread.currentThread().getId(),
                     true));
             ps.println("ControllerBase session = " + request.getSession(false));
+            ps.println("ControllerBase request URI = " + request.getRequestURI());
             ps.println("ControllerBase class = " + Thread.currentThread().getName());
             ps.println("ControllerBase stack trace = ");
             new Exception().printStackTrace(ps);
