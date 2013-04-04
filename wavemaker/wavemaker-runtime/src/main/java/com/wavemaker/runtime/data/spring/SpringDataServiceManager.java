@@ -294,16 +294,6 @@ public class SpringDataServiceManager implements DataServiceManager {
 					new FileOutputStream("/tmp/ftl", true));
 			ps.println("get = " + new FileThreadLocal<String>("sessionid").get());
 			ps.println("thread = " + Thread.currentThread().getName());
-			
-			try {
-	            new FileThreadLocal<String>("sessionid").remove();
-	        } catch (Exception e) {
-	        }
-	        if (new FileThreadLocal<String>("sessionid").get() != null)
-	            ps.println("bug: FileThreadLocal not removed");
-	        if (new FileThreadLocal<String>("sessionid").get() != null)
-                ps.println("bug: no session stored");
-			
 			ps.println();
 			ps.close();
 		} catch (Exception e) {
