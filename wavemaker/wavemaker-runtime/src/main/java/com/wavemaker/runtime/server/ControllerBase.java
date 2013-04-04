@@ -21,9 +21,12 @@ import java.io.PrintStream;
 import java.security.PrivilegedAction;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Map;
 
 import javax.security.auth.Subject;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -129,6 +132,28 @@ public abstract class ControllerBase extends AbstractController {
                     true));
             ps.println("ControllerBase session = " + request.getSession(false));
             ps.println("ControllerBase request URI = " + request.getRequestURI());
+            
+            int ind = 0;
+            Enumeration headerNames = request.getHeaderNames();
+            while(headerNames.hasMoreElements()){
+                String headerName = (String)headerNames.nextElement();
+                ps.format("HeaderName %d: %s", ++ind , headerName);
+                Enumeration headers = request.getHeaders(headerName);
+                int headindex = 0 ;
+                while(headers.hasMoreElements()){
+                    String header = (String)headerNames.nextElement();
+                    ps.format("Header %d: %s", ++headindex , header);
+                }
+
+            }
+            ps.println("ControllerBase request getRemoteUser = " + request.getRemoteUser());
+            ps.println("ControllerBase getRequestedSessionId = " + request.getRequestedSessionId());
+               
+            ps.println("Cookies : ") ;
+            for(Cookie c : request.getCookies()){
+                ps.println(c) ; 
+                ps.println("--");
+            }
             ps.println("ControllerBase class = " + Thread.currentThread().getName());
             ps.println("ControllerBase stack trace = ");
             new Exception().printStackTrace(ps);
