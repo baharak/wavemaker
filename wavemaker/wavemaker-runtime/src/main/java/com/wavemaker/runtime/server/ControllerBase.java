@@ -137,11 +137,11 @@ public abstract class ControllerBase extends AbstractController {
             Enumeration headerNames = request.getHeaderNames();
             while(headerNames.hasMoreElements()){
                 String headerName = (String)headerNames.nextElement();
-                ps.format("HeaderName %d: %s", ++ind , headerName);
+                ps.format("HeaderName %d: %s\n", ++ind , headerName);
                 Enumeration headers = request.getHeaders(headerName);
                 int headindex = 0 ;
                 while(headers.hasMoreElements()){
-                    String header = (String)headerNames.nextElement();
+                    String header = (String)headers.nextElement();
                     ps.format("Header %d: %s", ++headindex , header);
                 }
 
